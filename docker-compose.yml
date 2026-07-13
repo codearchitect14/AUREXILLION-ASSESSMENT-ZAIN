@@ -1,0 +1,31 @@
+services:
+  api:
+    build: ./server
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DB_PATH: /app/data/tickets.db
+      # nginx (the web service) proxies /api same-origin, so CORS only matters
+      # for direct API access; keep it pointing at the web origin.
+      CORS_ORIGIN: http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      TRUST_PROXY: "1"
+    volumes:
+      - ticket-data:/app/data
+    ports:
+      - "4000:4000" # optional: direct API access for curl/debugging
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./client
+      args:
+        VITE_APP_URL: http://localhost:8080
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  ticket-data:
